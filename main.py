@@ -9,10 +9,16 @@ from sklearn import preprocessing
 from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.tree import DecisionTreeClassifier, _tree
 
+from audio import get_audio_symptom
+
+import whisper
+whisper_model = whisper.load_model("base.en")
+
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 SEVERITY_THRESHOLD = 13
 
+way = input("Select Text or Audio")
 
 def _start():
     print("\n","-"*30, "Disease Prediction", "-"*30)
@@ -230,8 +236,12 @@ def _get_init_symptom(feature_names):
 
     while True:
         # Get the initial symtpom.
-        print("\nPlease, tell me the most important symptom you are experiencing: ", end="")
-        inp_disease = input("")
+        if way == 'Text':
+            print("\nPlease, tell me the most important symptom you are experiencing: ", end="")
+            inp_disease = input("")
+        else:
+            inp_disease = get_audio_symptom(whisper_model, feature_names)
+
         conf, cnf_dis = _get_related(chk_dis, inp_disease)
 
         # If symptom exists
@@ -241,7 +251,7 @@ def _get_init_symptom(feature_names):
                 print("Here are some diseases related to your definition: ")
 
             for number, disease in enumerate(cnf_dis):
-                if len(cnf_dis) > 1: print(" -",disease)
+                if len(cnf_dis) > 1: print(" -", disease)
 
             # If there is more than one search related
             if number > 0:
