@@ -14,10 +14,16 @@ from sklearn import preprocessing
 from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.tree import DecisionTreeClassifier, _tree
 
+from colored import fg
+
 warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=UserWarning)
 
 SEVERITY_THRESHOLD = 13
- 
+CYAN = '\033[94m'
+CEND = '\033[0m'
+CRED = '\033[91m'
+CGREEN = '\033[92m'
  
 # this method is for taking the commands
 # and recognizing the command from the
@@ -31,7 +37,7 @@ def takeCommand():
     # we will use the Microphone module
     # for listening the command
     with sr.Microphone() as source:
-        print('\nListening...')
+        print(CYAN+'\nListening...'+CEND)
          
         # seconds of non-speaking audio before
         # a phrase is considered complete
@@ -42,17 +48,17 @@ def takeCommand():
         # it is good else we will have exception
         # handling
         try:
-            print("Recognizing...")
+            print(CYAN+'Recognizing...'+CEND)
              
             # for Listening the command in indian
             # english we can also use 'hi-In'
             # for hindi recognizing
             Query = r.recognize_google(audio, language='en-en')
-            print("the command is printed=", Query)
+            print(CGREEN+"User: "+CEND +Query)
              
         except Exception as e:
             print(e)
-            print("Say that again sir")
+            print(CRED+"I did not understand you. Please, repeat your answer."+CEND)
             return "None"
          
         return Query
@@ -121,10 +127,11 @@ def Hello():
 
 def _start():
     print("\n","-"*30, "Disease Prediction", "-"*30)
-    print("\nWhat's your Name? ", end="-> ")
+    print(CYAN+"VirtualDoctor: "+CEND+"What's your Name? ")
     speak("What's your Name?")
     # name=input("")
     name = takeCommand().lower()
+    print(CYAN+"VirtualDoctor: "+CEND+"Hello "+name+", you must answer some short questions in order to obtain a prediction on a disease you may have")
     speak("Hello "+name+", you must answer some short questions in order to obtain a prediction on a disease you may have.")
     # print("\nHello "+name+", you must answer some short questions in order to obtain a prediction on a disease you may have.")
 
@@ -210,10 +217,10 @@ def _get_severity(exp, info):   # sourcery skip: avoid-builtin-shadow
          sum = sum + info['severity'][item]
 
     if((sum * info['days']) / (len(exp) + 1) > SEVERITY_THRESHOLD):
-        print("You should take the consultation from doctor. ")
+        print(CYAN+"VirtualDoctor: "+CEND+"You should take the consultation from doctor. ")
         speak("You should take the consultation from doctor. ")
     else:
-        print("It might not be that bad but you should take precautions.")
+        print(CYAN+"VirtualDoctor: "+CEND+"It might not be that bad but you should take precautions.")
         speak("It might not be that bad but you should take precautions.")
 
 
@@ -250,24 +257,24 @@ def _get_disease(value, le):
 
 
 def _get_secondary_symptoms(inp_disease, symptoms_given):
-    print("Are you experiencing any ...")
+    
     secondary_symptoms=[]
     for symptom in list(symptoms_given):
         if symptom == inp_disease:
             continue
 
-        print(" - "+symptom+"? ", end="")
+        print(CYAN+"VirtualDoctor: "+CEND+" Are you experiencing any "+symptom+"? ")
         speak("Are you experiencing any" +symptom.replace("_", " "))
         while True:
             # inp = input("")
             while True:
                 inp = takeCommand()
-                if inp in ['yes','yes yes','no','nope','no no']: break
-                print("You must answer with yes or no: ", end="")
+                if inp in ['yes','yes yes','yeah','ye','no','nope','no no']: break
+                print(CYAN+"VirtualDoctor: "+CEND+"You must answer with yes or no: ")
                 speak("You must answer with yes or no: ")
             break
 
-        if(inp in ['yes','yes yes']):
+        if(inp in ['yes','yes yes', 'yeah', 'ye']):
             secondary_symptoms.append(symptom)
     return secondary_symptoms
 
@@ -303,38 +310,38 @@ def _recursion(tree_, info, inp_disease, disease_names, node, depth) -> None:
         # Predict a second disease.
         second_prediction = _secondary_prediction(info['model'], secondary_symptoms)
 
-        print("\n\n", "-"*50, "PREDICTION INFORMATION", "-"*50)
+        #print("\n\n", "-"*50, "PREDICTION INFORMATION", "-"*50)
         
         # If the two diseases found match show it
         if(present_disease[0] == second_prediction[0]):
-            print("\nYou may have", present_disease[0])
+            print(CYAN+"VirtualDoctor: "+CEND+"You may have " + present_disease[0])
             speak("You may have"+present_disease[0])
 
             if present_disease[0] in info['description'].keys():
-                print("\n"+info['description'][present_disease[0]])
+                print(CYAN+"VirtualDoctor: "+CEND+info['description'][present_disease[0]])
             else:
-                print("\nSorry, we don't have any useful description for this disease.")
+                print(CYAN+"VirtualDoctor: "+CEND+"Sorry, we don't have any useful description for this disease.")
 
             # readn(f"You may have {present_disease[0]}")
             # readn(f"{description_list[present_disease[0]]}")
 
         # If they don't match show both
         else:
-            print("\nYou may have", present_disease[0], "or", second_prediction[0])
+            print(CYAN+"VirtualDoctor: "+CEND + "You may have "+ present_disease[0] +"or"+second_prediction[0])
             speak("You may have"+present_disease[0]+" or "+second_prediction[0])
 
             if present_disease[0] in info['description'].keys():
-                print("\n"+info['description'][present_disease[0]])
+                print(CYAN+"VirtualDoctor: "+CEND +info['description'][present_disease[0]])
             else:
-                print("Sorry, we don't have any useful description for this disease.")
+                print(CYAN+"VirtualDoctor: "+CEND+"Sorry, we don't have any useful description for this disease.")
             if second_prediction[0] in info['description'].keys():
-                print("\n"+info['description'][second_prediction[0]])
+                print(CYAN+"VirtualDoctor: "+CEND+info['description'][second_prediction[0]])
             else:
-                print("Sorry, we don't have any useful description for this disease.")
+                print(CYAN+"VirtualDoctor: "+CEND+"Sorry, we don't have any useful description for this disease.")
 
         # Show precautions for disease
         precaution_list = info['precaution'][present_disease[0]]
-        print("\nYou should follow the next precautions: ")
+        print(CYAN+"VirtualDoctor: "+CEND+"You should follow the next precautions: ")
         speak("You should follow the next precautions")
         for j in precaution_list:
             print(" -", j)
@@ -347,7 +354,7 @@ def _get_init_symptom(feature_names):
 
     while True:
         # Get the initial symtpom.
-        print("\nPlease, tell me the most important symptom you are experiencing: ", end="")
+        print(CYAN+"VirtualDoctor: "+CEND+"Please, tell me the most important symptom you are experiencing: ")
         speak("Please, tell me the most important symptom you are experiencing: ")
         # inp_disease = input("")
         inp_disease = takeCommand()
@@ -357,14 +364,14 @@ def _get_init_symptom(feature_names):
         if conf==1:
 
             if len(cnf_dis) > 1:
-                print("Here are some diseases related to your definition: ")
+                print(CYAN+"VirtualDoctor: "+CEND+"Here are some diseases related to your definition: ")
 
             for number, disease in enumerate(cnf_dis):
                 if len(cnf_dis) > 1: print(" -", disease)
 
             # If there is more than one search related
             if number > 0:
-                print("Please, write the disease you meant: ", end="")
+                print(CYAN+"VirtualDoctor: "+CEND+"Please, write the disease you meant: ")
                 speak("Please, say the disease you meant: ")
                 conf_inp = takeCommand()
                 inp_disease = conf_inp
@@ -376,18 +383,19 @@ def _get_init_symptom(feature_names):
             break
 
         else:
-            print("Enter valid symptom.")
+            print(CYAN+"VirtualDoctor: "+CEND + "Enter valid symptom.")
     return inp_disease
 
 
 def _get_num_days(info):
     while True:
         try:
+            print(CYAN+"VirtualDoctor: "+CEND+"From how many days are you feeling this symptom? ")
             speak("From how many days are you feeling this symptom? ")
             text = takeCommand()
-
+            
             info['days'] = int(text)
-            print(info['days'])
+            
             return info
 
         except Exception:

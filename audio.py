@@ -34,5 +34,4 @@ def get_audio_symptom(model, feature_names):
 
     return result["text"]
 
-
 get_audio_symptom(model)
