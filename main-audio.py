@@ -1,3 +1,8 @@
+import pyttsx3
+import speech_recognition as sr
+import webbrowser 
+import datetime 
+
 import contextlib
 import csv
 import re
@@ -12,13 +17,116 @@ from sklearn.tree import DecisionTreeClassifier, _tree
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 SEVERITY_THRESHOLD = 13
+ 
+ 
+# this method is for taking the commands
+# and recognizing the command from the
+# speech_Recognition module we will use
+# the recongizer method for recognizing
+def takeCommand():
+ 
+    r = sr.Recognizer()
+ 
+    # from the speech_Recognition module
+    # we will use the Microphone module
+    # for listening the command
+    with sr.Microphone() as source:
+        print('\nListening...')
+         
+        # seconds of non-speaking audio before
+        # a phrase is considered complete
+        r.pause_threshold = 0.7
+        audio = r.listen(source)
+        # Now we will be using the try and catch
+        # method so that if sound is recognized
+        # it is good else we will have exception
+        # handling
+        try:
+            print("Recognizing...")
+             
+            # for Listening the command in indian
+            # english we can also use 'hi-In'
+            # for hindi recognizing
+            Query = r.recognize_google(audio, language='en-en')
+            print("the command is printed=", Query)
+             
+        except Exception as e:
+            print(e)
+            print("Say that again sir")
+            return "None"
+         
+        return Query
+ 
+def speak(audio):
+     
+    engine = pyttsx3.init()
+    # getter method(gets the current value
+    # of engine property)
+    #voices = engine.getProperty('voices')
+     
+    # setter method .[0]=male voice and
+    # [1]=female voice in set Property.
+    #engine.setProperty('voice', voices[0].id)
+    voices = engine.getProperty('voices')
+    engine.setProperty('voice', voices[1].id)
+    rate = engine.getProperty('rate')
+    engine.setProperty('rate', rate-30)
+     
+    # Method for the speaking of the assistant
+    engine.say(audio) 
+     
+    # Blocks while processing all the currently
+    # queued commands
+    engine.runAndWait()
+ 
+def tellDay():
+     
+    # This function is for telling the
+    # day of the week
+    day = datetime.datetime.now().weekday() + 1
+
+    #this line tells us about the number
+    # that will help us in telling the day
+    Day_dict = {1: 'Monday', 2: 'Tuesday',
+                3: 'Wednesday', 4: 'Thursday',
+                5: 'Friday', 6: 'Saturday',
+                7: 'Sunday'}
+
+    if day in Day_dict:
+        day_of_the_week = Day_dict[day]
+        print(day_of_the_week)
+        speak("The day is " + day_of_the_week)
+ 
+ 
+def tellTime():
+     
+    # This method will give the time
+    time = str(datetime.datetime.now())
+     
+    # the time will be displayed like
+    # this "2020-06-05 17:50:14.582630"
+    #nd then after slicing we can get time
+    print(time)
+    hour = time[11:13]
+    min = time[14:16]
+    speak("The time is sir" + hour + "Hours and" + min + "Minutes")   
+ 
+def Hello():
+     
+    # This function is for when the assistant
+    # is called it will say hello and then
+    # take query
+    speak("hello sir I am your desktop assistant. Tell me how may I help you")
 
 
 def _start():
     print("\n","-"*30, "Disease Prediction", "-"*30)
     print("\nWhat's your Name? ", end="-> ")
-    name=input("")
-    print("\nHello "+name+", you must answer some short questions in order to obtain a prediction on a disease you may have.")
+    speak("What's your Name?")
+    # name=input("")
+    name = takeCommand().lower()
+    speak("Hello "+name+", you must answer some short questions in order to obtain a prediction on a disease you may have.")
+    # print("\nHello "+name+", you must answer some short questions in order to obtain a prediction on a disease you may have.")
 
 
 def _load_data() -> tuple[pd.DataFrame, pd.Series]:
@@ -103,8 +211,10 @@ def _get_severity(exp, info):   # sourcery skip: avoid-builtin-shadow
 
     if((sum * info['days']) / (len(exp) + 1) > SEVERITY_THRESHOLD):
         print("You should take the consultation from doctor. ")
+        speak("You should take the consultation from doctor. ")
     else:
         print("It might not be that bad but you should take precautions.")
+        speak("It might not be that bad but you should take precautions.")
 
 
 def _get_related(dis_list, inp):
@@ -143,19 +253,21 @@ def _get_secondary_symptoms(inp_disease, symptoms_given):
     print("Are you experiencing any ...")
     secondary_symptoms=[]
     for symptom in list(symptoms_given):
-        if symptom != inp_disease:
-            print(" - "+symptom+"? ", end="")
-        else:
+        if symptom == inp_disease:
             continue
 
+        print(" - "+symptom+"? ", end="")
+        speak("Are you experiencing any" +symptom.replace("_", " "))
         while True:
-            inp = input("")
-            if inp in ["yes", "no"]:
-                break
-            else:
-                print("You must answer with yes/no: ", end="")
+            # inp = input("")
+            while True:
+                inp = takeCommand()
+                if inp in ['yes','yes yes','no','nope','no no']: break
+                print("You must answer with yes or no: ", end="")
+                speak("You must answer with yes or no: ")
+            break
 
-        if(inp == "yes"):
+        if(inp in ['yes','yes yes']):
             secondary_symptoms.append(symptom)
     return secondary_symptoms
 
@@ -196,6 +308,7 @@ def _recursion(tree_, info, inp_disease, disease_names, node, depth) -> None:
         # If the two diseases found match show it
         if(present_disease[0] == second_prediction[0]):
             print("\nYou may have", present_disease[0])
+            speak("You may have"+present_disease[0])
 
             if present_disease[0] in info['description'].keys():
                 print("\n"+info['description'][present_disease[0]])
@@ -208,6 +321,8 @@ def _recursion(tree_, info, inp_disease, disease_names, node, depth) -> None:
         # If they don't match show both
         else:
             print("\nYou may have", present_disease[0], "or", second_prediction[0])
+            speak("You may have"+present_disease[0]+" or "+second_prediction[0])
+
             if present_disease[0] in info['description'].keys():
                 print("\n"+info['description'][present_disease[0]])
             else:
@@ -220,8 +335,10 @@ def _recursion(tree_, info, inp_disease, disease_names, node, depth) -> None:
         # Show precautions for disease
         precaution_list = info['precaution'][present_disease[0]]
         print("\nYou should follow the next precautions: ")
+        speak("You should follow the next precautions")
         for j in precaution_list:
-            print(" -",j)
+            print(" -", j)
+            speak(j)
 
 
 def _get_init_symptom(feature_names):
@@ -231,7 +348,9 @@ def _get_init_symptom(feature_names):
     while True:
         # Get the initial symtpom.
         print("\nPlease, tell me the most important symptom you are experiencing: ", end="")
-        inp_disease = input("")
+        speak("Please, tell me the most important symptom you are experiencing: ")
+        # inp_disease = input("")
+        inp_disease = takeCommand()
         conf, cnf_dis = _get_related(chk_dis, inp_disease)
 
         # If symptom exists
@@ -241,12 +360,13 @@ def _get_init_symptom(feature_names):
                 print("Here are some diseases related to your definition: ")
 
             for number, disease in enumerate(cnf_dis):
-                if len(cnf_dis) > 1: print(" -",disease)
+                if len(cnf_dis) > 1: print(" -", disease)
 
             # If there is more than one search related
             if number > 0:
                 print("Please, write the disease you meant: ", end="")
-                conf_inp = input("")
+                speak("Please, say the disease you meant: ")
+                conf_inp = takeCommand()
                 inp_disease = conf_inp
 
             else:
@@ -263,8 +383,13 @@ def _get_init_symptom(feature_names):
 def _get_num_days(info):
     while True:
         try:
-            info['days'] = int(input("\nFrom how many days are you feeling this symptom? "))
+            speak("From how many days are you feeling this symptom? ")
+            text = takeCommand()
+
+            info['days'] = int(text)
+            print(info['days'])
             return info
+
         except Exception:
             print("Enter valid input.")
 
@@ -308,9 +433,3 @@ def main() -> None:
 
 
 main()
-
-
-
-
-
-
