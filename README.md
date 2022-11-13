@@ -2,10 +2,18 @@
 
 Virtual Doctor is a voice virtual assistant designed for elder people to detect some diseases in early stage and inform them in order to decrease mortality rate.
 
+
+### Installation
+
+```
+pip install -r requirements.txt
+```
+
+
 ### Execution
 
 ```
-python3 main-audio.py
+python main-audio.py
 ```
 
 
